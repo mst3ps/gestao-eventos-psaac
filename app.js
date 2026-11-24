@@ -21,10 +21,16 @@ const TAG_COLORS = [
   { bg: '#99f6e4', text: '#115e59' }
 ];
 
+function obterListaEscaloesUnica() {
+  const base = dbLists['Escalões'] || [];
+  return Array.from(new Set([...base, 'Direção', 'Outros Assuntos']));
+}
+
+// Escalões definem a cor da TAG
 function obterEstiloTag(texto) {
-  const regra = colorRules.escaloes?.[texto];
-  if (regra && regra.tag) {
-    return { bg: regra.tag, text: calcularCorTextoContraste(regra.tag) };
+  const corTag = colorRules.escaloes?.[texto];
+  if (corTag) {
+    return { bg: corTag, text: calcularCorTextoContraste(corTag) };
   }
   if (texto === 'Direção') return { bg: '#f3e8ff', text: '#6b21a8' };
   if (texto === 'Outros Assuntos') return { bg: '#ffedd5', text: '#9a3412' };
@@ -33,6 +39,22 @@ function obterEstiloTag(texto) {
   let hash = 0;
   for (let i = 0; i < texto.length; i++) hash = texto.charCodeAt(i) + ((hash << 5) - hash);
   return TAG_COLORS[Math.abs(hash) % TAG_COLORS.length];
+}
+
+// Tipos de Evento definem a cor do CARTÃO (a menos que exista cor manual no evento)
+function obterCorCartao(ev) {
+  if (ev.cor) return ev.cor;
+
+  const corTipo = colorRules.tipos?.[ev.tipo];
+  if (corTipo) return corTipo;
+
+  const estado = (ev.estado || '').toLowerCase();
+  const tipo = (ev.tipo || '').toLowerCase();
+  if (estado.includes('cancelado') || estado.includes('adiado')) return '#d50000';
+  if (tipo.includes('jogo') || tipo.includes('torneio')) return '#0b8043';
+  if (ev.source === 'DIRECAO') return '#8e24aa';
+  if (ev.source === 'OUTROS') return '#e67c73';
+  return '#1a73e8';
 }
 
 function calcularCorTextoContraste(hex) {
@@ -115,7 +137,7 @@ async function carregarDados() {
     dbLists = data.lists || {};
     colorRules = data.colorRules || { escaloes: {}, tipos: {} };
     aplicarFiltrosCalendario();
-    mostrarToast('Dados atualizados!');
+    mostrarToast(`Sincronizado! (${allEvents.length} eventos)`);
   } else {
     mostrarToast('Erro: ' + data.message);
   }
@@ -124,8 +146,8 @@ async function carregarDados() {
 // ================= LISTAS & MULTI-FILTROS =================
 function preencherListasInterface() {
   const tipos = dbLists['Tipo de Evento'] || [];
-  const escaloesBase = dbLists['Escalões'] || [];
-  const escaloesCompletos = [...escaloesBase, 'Direção', 'Outros Assuntos'];
+  const escaloesBase = (dbLists['Escalões'] || []).filter(e => e !== 'Direção' && e !== 'Outros Assuntos');
+  const escaloesCompletos = obterListaEscaloesUnica();
 
   popularSelect('evTipo', tipos);
   popularSelect('evPoliciamento', dbLists['Pedido Policiamento'] || ['NA', 'Sim', 'Não'], 'NA');
@@ -334,29 +356,6 @@ function inicializarCalendario() {
   });
 
   calendar.render();
-}
-
-function obterCorCartao(ev) {
-  // 1. Prioridade: Cor manual definida no cartão
-  if (ev.cor) return ev.cor;
-
-  // 2. Predefinição por Escalão / Categoria (ex: Direção, Outros Assuntos, Sub-15...)
-  const regraEsc = colorRules.escaloes?.[ev.escalao];
-  if (regraEsc && regraEsc.card) return regraEsc.card;
-
-  // 3. Predefinição por Tipo de Evento
-  const regraTipo = colorRules.tipos?.[ev.tipo];
-  if (regraTipo && regraTipo.card) return regraTipo.card;
-
-  // 4. Fallback padrão
-  if (ev.source === 'DIRECAO') return '#8e24aa';
-  if (ev.source === 'OUTROS') return '#e67c73';
-
-  const estado = (ev.estado || '').toLowerCase();
-  const tipo = (ev.tipo || '').toLowerCase();
-  if (estado.includes('cancelado') || estado.includes('adiado')) return '#d50000';
-  if (tipo.includes('jogo') || tipo.includes('torneio')) return '#0b8043';
-  return '#1a73e8';
 }
 
 function mapearEventosFiltrados() {
@@ -782,15 +781,15 @@ function descarregarPdfBase64(base64, fileName) {
   link.click();
 }
 
-// ================= MODAL DEFINIÇÕES (PREDEFINIÇÃO DE CORES) =================
+// ================= MODAL DEFINIÇÕES (ESCALÃO = TAG | TIPO = CARTÃO) =================
 function abrirModalDefinicoes() {
-  const escaloes = [...(dbLists['Escalões'] || []), 'Direção', 'Outros Assuntos'];
+  const escaloes = obterListaEscaloesUnica();
   const tipos = dbLists['Tipo de Evento'] || [];
 
   const boxEsc = document.getElementById('listaCoresEscaloes');
   boxEsc.innerHTML = '';
   escaloes.forEach(nome => {
-    const r = colorRules.escaloes?.[nome] || { card: '', tag: '' };
+    const corGuardada = colorRules.escaloes?.[nome] || '';
     const tagPadrao = obterEstiloTag(nome).bg;
     const row = document.createElement('div');
     row.className = 'color-rule-row';
@@ -798,12 +797,8 @@ function abrirModalDefinicoes() {
     row.innerHTML = `
       <span>${nome}</span>
       <div class="color-input-wrap">
-        <input type="color" class="inp-card-color" value="${r.card || '#1a73e8'}" data-active="${r.card ? '1' : '0'}" oninput="ativarCorLinha(this)">
-        <span class="color-status-txt">${r.card ? 'Ativa' : 'Auto'}</span>
-      </div>
-      <div class="color-input-wrap">
-        <input type="color" class="inp-tag-color" value="${r.tag || tagPadrao}" data-active="${r.tag ? '1' : '0'}" oninput="ativarCorLinha(this)">
-        <span class="color-status-txt">${r.tag ? 'Ativa' : 'Auto'}</span>
+        <input type="color" class="inp-cor" value="${corGuardada || tagPadrao}" data-active="${corGuardada ? '1' : '0'}" oninput="ativarCorLinha(this)">
+        <span class="color-status-txt">${corGuardada ? 'Ativa' : 'Auto'}</span>
       </div>
       <button type="button" class="btn-mini" onclick="limparCorLinha(this)">Auto</button>
     `;
@@ -813,17 +808,16 @@ function abrirModalDefinicoes() {
   const boxTipos = document.getElementById('listaCoresTipos');
   boxTipos.innerHTML = '';
   tipos.forEach(nome => {
-    const r = colorRules.tipos?.[nome] || { card: '' };
+    const corGuardada = colorRules.tipos?.[nome] || '';
     const row = document.createElement('div');
     row.className = 'color-rule-row';
     row.dataset.nome = nome;
     row.innerHTML = `
       <span>${nome}</span>
       <div class="color-input-wrap">
-        <input type="color" class="inp-tipo-color" value="${r.card || '#0b8043'}" data-active="${r.card ? '1' : '0'}" oninput="ativarCorLinha(this)">
-        <span class="color-status-txt">${r.card ? 'Ativa' : 'Auto'}</span>
+        <input type="color" class="inp-cor" value="${corGuardada || '#1a73e8'}" data-active="${corGuardada ? '1' : '0'}" oninput="ativarCorLinha(this)">
+        <span class="color-status-txt">${corGuardada ? 'Ativa' : 'Auto'}</span>
       </div>
-      <span></span>
       <button type="button" class="btn-mini" onclick="limparCorLinha(this)">Auto</button>
     `;
     boxTipos.appendChild(row);
@@ -862,23 +856,13 @@ async function guardarDefinicoesCores() {
   const novasRegras = { escaloes: {}, tipos: {} };
 
   document.querySelectorAll('#listaCoresEscaloes .color-rule-row').forEach(row => {
-    const nome = row.dataset.nome;
-    const inpCard = row.querySelector('.inp-card-color');
-    const inpTag = row.querySelector('.inp-tag-color');
-    const cardVal = inpCard.dataset.active === '1' ? inpCard.value : '';
-    const tagVal = inpTag.dataset.active === '1' ? inpTag.value : '';
-    if (cardVal || tagVal) {
-      novasRegras.escaloes[nome] = { card: cardVal, tag: tagVal };
-    }
+    const inp = row.querySelector('.inp-cor');
+    if (inp.dataset.active === '1') novasRegras.escaloes[row.dataset.nome] = inp.value;
   });
 
   document.querySelectorAll('#listaCoresTipos .color-rule-row').forEach(row => {
-    const nome = row.dataset.nome;
-    const inpCard = row.querySelector('.inp-tipo-color');
-    const cardVal = inpCard.dataset.active === '1' ? inpCard.value : '';
-    if (cardVal) {
-      novasRegras.tipos[nome] = { card: cardVal };
-    }
+    const inp = row.querySelector('.inp-cor');
+    if (inp.dataset.active === '1') novasRegras.tipos[row.dataset.nome] = inp.value;
   });
 
   const resp = await apiRequest({ action: 'saveColorRules', rules: novasRegras });

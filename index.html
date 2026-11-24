@@ -375,36 +375,24 @@
     </div>
   </div>
 
-  <!-- MODAL DEFINIÇÕES (EXCLUSIVO PARA PREDEFINIÇÃO DE CORES) -->
+  <!-- MODAL DEFINIÇÕES (ESCALÃO = TAG | TIPO = CARTÃO) -->
   <div id="modalDefinicoes" class="modal-overlay hidden">
-    <div class="modal-card modal-lg">
+    <div class="modal-card">
       <div class="modal-header">
         <h2>🎨 Predefinição de Cores</h2>
         <button class="close-btn" onclick="fecharModal('modalDefinicoes')">&times;</button>
       </div>
       <div class="modal-body">
-        <p class="helper-text">Define as cores automáticas dos cartões e das etiquetas (tags) por Escalão e Tipo de Evento. Se um evento tiver cor manual escolhida no formulário, essa cor terá prioridade.</p>
+        <p class="helper-text">Os <strong>Escalões</strong> definem a cor da etiqueta (tag) no topo do cartão, e os <strong>Tipos de Evento</strong> definem a cor de fundo do cartão.</p>
 
-        <div class="section-label">Cores por Escalão / Categoria</div>
-        <div class="color-table-header">
-          <span>Escalão / Categoria</span>
-          <span>Cor do Cartão</span>
-          <span>Cor da Tag</span>
-          <span></span>
-        </div>
+        <div class="section-label">🏷️ Escalões / Categorias (Cor da Tag)</div>
         <div id="listaCoresEscaloes" class="color-rules-list"></div>
 
-        <div class="section-label" style="margin-top:16px;">Cores por Tipo de Evento (Fallback se o Escalão não tiver cor)</div>
-        <div class="color-table-header">
-          <span>Tipo de Evento</span>
-          <span>Cor do Cartão</span>
-          <span></span>
-          <span></span>
-        </div>
+        <div class="section-label" style="margin-top:16px;">🗂️ Tipos de Evento (Cor do Cartão)</div>
         <div id="listaCoresTipos" class="color-rules-list"></div>
 
         <div class="modal-footer">
-          <button type="button" class="btn btn-outline" onclick="reporCoresPadrao()">Repor Padrão</button>
+          <button type="button" class="btn btn-outline" onclick="reporCoresPadrao()">Repor Auto</button>
           <div class="footer-right">
             <button type="button" class="btn btn-outline" onclick="fecharModal('modalDefinicoes')">Cancelar</button>
             <button type="button" id="btnGuardarCores" class="btn btn-green" onclick="guardarDefinicoesCores()">Guardar Predefinições</button>

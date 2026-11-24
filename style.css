@@ -466,15 +466,7 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--p
   line-height: 1.45;
 }
 
-.color-table-header {
-  display: grid;
-  grid-template-columns: 1.6fr 1fr 1fr 60px;
-  gap: 8px;
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--text-muted);
-  padding: 0 8px 6px;
-}
+
 
 .color-rules-list {
   display: flex;
@@ -484,10 +476,10 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--p
 
 .color-rule-row {
   display: grid;
-  grid-template-columns: 1.6fr 1fr 1fr 60px;
+  grid-template-columns: 1fr 120px 60px;
   align-items: center;
-  gap: 8px;
-  padding: 6px 8px;
+  gap: 10px;
+  padding: 6px 10px;
   background: #f8fafc;
   border: 1px solid var(--border);
   border-radius: 6px;
