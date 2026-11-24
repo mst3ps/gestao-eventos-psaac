@@ -3,7 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Gestão de Eventos | PSAAC</title>
+  <title>Gestão de Eventos - PSAAC</title>
+  <link rel="icon" type="image/png" href="logo.png">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@fullcalendar/core@6.1.15/locales/pt.global.min.js"></script>
@@ -15,9 +16,9 @@
   <!-- ECRÃ DE LOGIN -->
   <div id="loginScreen" class="login-wrapper">
     <div class="login-card">
-      <div class="login-logo">⚽</div>
-      <h1>Gestão de Agenda PSAAC</h1>
-      <p>Inicia sessão com uma conta Google autorizada para aceder ao calendário de treinos e jogos.</p>
+      <img src="logo.png" alt="Logo PSAAC" class="login-logo-img">
+      <h1>Gestão de Eventos - PSAAC</h1>
+      <p>Inicia sessão com uma conta Google autorizada para aceder à agenda do clube.</p>
       
       <div id="g_id_onload"
            data-client_id="735900957777-v8tr7pgf3ftvkv5df857fqpg6nq202i1.apps.googleusercontent.com"
@@ -42,35 +43,50 @@
   <!-- APLICAÇÃO PRINCIPAL -->
   <div id="appContainer" class="app-container hidden">
     
-    <!-- BARRA SUPERIOR -->
+    <!-- CABEÇALHO -->
     <header class="topbar">
-      <div class="topbar-left">
-        <span class="brand-badge">⚽ PSAAC</span>
-        <button class="btn btn-primary" onclick="abrirModalNovoEvento()">+ Novo Evento</button>
-        <button class="btn btn-secondary" onclick="abrirModalRecorrencia()">🔄 Treinos Recorrentes</button>
-        <button class="btn btn-secondary" onclick="abrirModalExportar()">📢 Exportar Agenda</button>
+      <!-- Esquerda: Logo + Título + Botões -->
+      <div class="header-left">
+        <img src="logo.png" alt="PSAAC" class="header-logo">
+        <div class="header-title-stack">
+          <h1 class="header-title">Gestão de Eventos - PSAAC</h1>
+          <div class="header-actions">
+            <button class="btn btn-green" onclick="abrirModalNovoEvento()">+ Novo Evento</button>
+            <button class="btn btn-outline" onclick="abrirModalExportar()">📢 Exportar Agenda</button>
+          </div>
+        </div>
       </div>
 
-      <div class="topbar-center">
-        <select id="filtroEscalao" class="filter-select" onchange="aplicarFiltrosCalendario()">
-          <option value="">Todos os Escalões</option>
-        </select>
-        <select id="filtroLocal" class="filter-select" onchange="aplicarFiltrosCalendario()">
-          <option value="">Todos os Locais</option>
-        </select>
-        <select id="filtroTipo" class="filter-select" onchange="aplicarFiltrosCalendario()">
-          <option value="">Todos os Tipos</option>
-        </select>
+      <!-- Centro: Multi-Filtros Empilhados (Escalões e Tipos) -->
+      <div class="header-center">
+        <div class="multi-dropdown" id="ddEscaloes">
+          <button type="button" class="multi-btn" onclick="toggleDropdown('ddEscaloes')">
+            <span id="lblFiltroEscaloes">Todos os Escalões</span>
+            <span class="chevron">▾</span>
+          </button>
+          <div class="multi-menu hidden" id="menuFiltroEscaloes"></div>
+        </div>
+
+        <div class="multi-dropdown" id="ddTipos">
+          <button type="button" class="multi-btn" onclick="toggleDropdown('ddTipos')">
+            <span id="lblFiltroTipos">Todos os Tipos</span>
+            <span class="chevron">▾</span>
+          </button>
+          <div class="multi-menu hidden" id="menuFiltroTipos"></div>
+        </div>
       </div>
 
-      <div class="topbar-right">
-        <button class="btn btn-icon" title="Sincronizar com Google Sheets" onclick="carregarDados()">↻</button>
-        <span id="userEmailDisplay" class="user-pill"></span>
-        <button class="btn btn-ghost" onclick="terminarSessao()">Sair</button>
+      <!-- Direita: Sync + Email + Sair / Definições -->
+      <div class="header-right">
+        <div class="user-row">
+          <button class="btn-sync" title="Sincronizar com Google Sheets" onclick="carregarDados()">↻</button>
+          <span id="userEmailDisplay" class="user-pill"></span>
+          <button class="btn-link" onclick="terminarSessao()">Sair</button>
+        </div>
+        <button class="btn-settings" onclick="abrirModalDefinicoes()">Definições</button>
       </div>
     </header>
 
-    <!-- BARRA DE ESTADO / TOAST -->
     <div id="toast" class="toast hidden"></div>
 
     <!-- CALENDÁRIO -->
@@ -79,29 +95,40 @@
     </main>
   </div>
 
-  <!-- MODAL 1: CRIAR / EDITAR EVENTO -->
+  <!-- MODAL UNIFICADO: + NOVO EVENTO / EDITAR EVENTO -->
   <div id="modalEvento" class="modal-overlay hidden">
     <div class="modal-card modal-lg">
       <div class="modal-header">
-        <h2 id="modalEventoTitulo">Detalhes do Evento</h2>
+        <h2 id="modalEventoTitulo">+ Novo Evento</h2>
         <button class="close-btn" onclick="fecharModal('modalEvento')">&times;</button>
       </div>
       <form id="formEvento" class="modal-body">
         <input type="hidden" id="evId">
 
-        <div class="section-label">Informação Principal</div>
+        <!-- SELETOR DE FOLHA / DESTINO -->
+        <div class="source-selector" id="sourceSelectorBox">
+          <button type="button" class="source-tab active" data-src="DESPORTO" onclick="mudarDestinoEvento('DESPORTO')">⚽ Treinos e Jogos</button>
+          <button type="button" class="source-tab" data-src="DIRECAO" onclick="mudarDestinoEvento('DIRECAO')">🏛️ Direção</button>
+          <button type="button" class="source-tab" data-src="OUTROS" onclick="mudarDestinoEvento('OUTROS')">📌 Outros Assuntos</button>
+        </div>
+        <input type="hidden" id="evSource" value="DESPORTO">
+
+        <div class="section-label">Informação Geral</div>
         <div class="grid-3">
           <div class="form-group">
             <label for="evTipo">Tipo de Evento *</label>
             <select id="evTipo" required></select>
           </div>
+
+          <!-- Escalão (Editável em Desporto, automático em Direção/Outros) -->
           <div class="form-group">
             <label for="evEscalao">Escalão *</label>
             <input list="dlEscaloes" id="evEscalao" required placeholder="Selecione ou escreva...">
             <datalist id="dlEscaloes"></datalist>
           </div>
-          <div class="form-group">
-            <label for="evEstado">Estado de Evento</label>
+
+          <div class="form-group field-desporto">
+            <label for="evEstado">Estado</label>
             <select id="evEstado"></select>
           </div>
         </div>
@@ -109,7 +136,7 @@
         <div class="grid-3">
           <div class="form-group">
             <label for="evData">Data *</label>
-            <input type="date" id="evData" required>
+            <input type="date" id="evData" required onchange="atualizarPrevisaoRec()">
           </div>
           <div class="form-group">
             <label for="evHoraInicio">Hora Início *</label>
@@ -121,68 +148,137 @@
           </div>
         </div>
 
-        <div class="form-group">
-          <label for="evLocal">Local</label>
-          <input list="dlLocais" id="evLocal" placeholder="Pavilhão / Ringue...">
-          <datalist id="dlLocais"></datalist>
-        </div>
-
-        <div class="section-label">Detalhes de Jogo / Competição</div>
-        <div class="grid-3">
-          <div class="form-group">
-            <label for="evCompeticao">Competição</label>
-            <input list="dlCompeticoes" id="evCompeticao" placeholder="Ex: Campeonato Distrital">
-            <datalist id="dlCompeticoes"></datalist>
-          </div>
-          <div class="form-group">
-            <label for="evJornada">Jornada</label>
-            <input type="text" id="evJornada" placeholder="Ex: 1ª Jornada">
-          </div>
-          <div class="form-group">
-            <label for="evCodigoJogo">Código de Jogo</label>
-            <input type="text" id="evCodigoJogo">
-          </div>
-        </div>
-
         <div class="grid-2">
           <div class="form-group">
-            <label for="evVisitado">Visitado</label>
-            <input type="text" id="evVisitado" placeholder="Ex: PSAAC">
+            <label for="evLocal">Local</label>
+            <input list="dlLocais" id="evLocal" placeholder="Pavilhão / Sede / Sala...">
+            <datalist id="dlLocais"></datalist>
           </div>
           <div class="form-group">
-            <label for="evVisitante">Visitante</label>
-            <input type="text" id="evVisitante" placeholder="Equipa adversária">
+            <label>Cor Individual do Cartão</label>
+            <div class="color-picker-row" id="evColorPalette">
+              <button type="button" class="color-swatch active" data-color="" onclick="selecionarCor(this)">Auto</button>
+              <button type="button" class="color-swatch" data-color="#1a73e8" style="background:#1a73e8" onclick="selecionarCor(this)"></button>
+              <button type="button" class="color-swatch" data-color="#0b8043" style="background:#0b8043" onclick="selecionarCor(this)"></button>
+              <button type="button" class="color-swatch" data-color="#f6bf26" style="background:#f6bf26" onclick="selecionarCor(this)"></button>
+              <button type="button" class="color-swatch" data-color="#d50000" style="background:#d50000" onclick="selecionarCor(this)"></button>
+              <button type="button" class="color-swatch" data-color="#8e24aa" style="background:#8e24aa" onclick="selecionarCor(this)"></button>
+              <button type="button" class="color-swatch" data-color="#e67c73" style="background:#e67c73" onclick="selecionarCor(this)"></button>
+              <button type="button" class="color-swatch" data-color="#616161" style="background:#616161" onclick="selecionarCor(this)"></button>
+            </div>
+            <input type="hidden" id="evCor" value="">
           </div>
         </div>
 
-        <div class="section-label">Logística e Comunicações</div>
-        <div class="grid-2">
-          <div class="form-group">
-            <label for="evPoliciamento">Pedido de Policiamento</label>
-            <select id="evPoliciamento"></select>
+        <!-- SECÇÃO ESPECÍFICA: DESPORTO -->
+        <div id="secDesporto">
+          <div class="section-label">Detalhes de Jogo / Competição</div>
+          <div class="grid-3">
+            <div class="form-group">
+              <label for="evCompeticao">Competição</label>
+              <input list="dlCompeticoes" id="evCompeticao" placeholder="Ex: Campeonato Distrital">
+              <datalist id="dlCompeticoes"></datalist>
+            </div>
+            <div class="form-group">
+              <label for="evJornada">Jornada</label>
+              <input type="text" id="evJornada" placeholder="Ex: 1ª Jornada">
+            </div>
+            <div class="form-group">
+              <label for="evCodigoJogo">Código de Jogo</label>
+              <input type="text" id="evCodigoJogo">
+            </div>
           </div>
-          <div class="form-group">
-            <label for="evNotificado">Notificado</label>
-            <select id="evNotificado"></select>
-          </div>
-        </div>
 
-        <div class="grid-2">
-          <div class="form-group">
-            <label for="evEmailPedido">Email Pedido</label>
-            <input list="dlEmailPedido" id="evEmailPedido" placeholder="Estado ou link do pedido">
-            <datalist id="dlEmailPedido"></datalist>
+          <div class="grid-2">
+            <div class="form-group">
+              <label for="evVisitado">Visitado</label>
+              <input type="text" id="evVisitado" placeholder="Ex: PSAAC">
+            </div>
+            <div class="form-group">
+              <label for="evVisitante">Visitante</label>
+              <input type="text" id="evVisitante" placeholder="Equipa adversária">
+            </div>
           </div>
-          <div class="form-group">
-            <label for="evEmailConfirmacao">Email Confirmação</label>
-            <input list="dlEmailConfirmacao" id="evEmailConfirmacao" placeholder="Estado ou link de confirmação">
-            <datalist id="dlEmailConfirmacao"></datalist>
+
+          <div class="section-label">Logística e Comunicações</div>
+          <div class="grid-2">
+            <div class="form-group">
+              <label for="evPoliciamento">Pedido de Policiamento</label>
+              <select id="evPoliciamento"></select>
+            </div>
+            <div class="form-group">
+              <label for="evNotificado">Notificado</label>
+              <select id="evNotificado"></select>
+            </div>
+          </div>
+
+          <div class="grid-2">
+            <div class="form-group">
+              <label for="evEmailPedido">Email Pedido</label>
+              <input list="dlEmailPedido" id="evEmailPedido">
+              <datalist id="dlEmailPedido"></datalist>
+            </div>
+            <div class="form-group">
+              <label for="evEmailConfirmacao">Email Confirmação</label>
+              <input list="dlEmailConfirmacao" id="evEmailConfirmacao">
+              <datalist id="dlEmailConfirmacao"></datalist>
+            </div>
           </div>
         </div>
 
         <div class="form-group">
           <label for="evObservacao">Observação</label>
-          <textarea id="evObservacao" rows="2" placeholder="Notas adicionais..."></textarea>
+          <textarea id="evObservacao" rows="2" placeholder="Descrição, detalhes ou notas adicionais..."></textarea>
+        </div>
+
+        <!-- RECORRÊNCIA INTEGRADA -->
+        <div id="boxRecorrenciaIntegrada" class="recurrence-box">
+          <label class="rec-toggle-label">
+            <input type="checkbox" id="chkRepetirEvento" onchange="togglePainelRecorrencia()">
+            <span>🔁 Repetir este evento semanalmente (Recorrência em lote)</span>
+          </label>
+
+          <div id="painelRecorrencia" class="rec-panel hidden">
+            <div class="grid-2">
+              <div class="form-group">
+                <label for="recDataFim">Repetir até à data *</label>
+                <input type="date" id="recDataFim" onchange="atualizarPrevisaoRec()">
+              </div>
+              <div class="form-group field-desporto">
+                <label for="recModoEscaloes">Múltiplos Escalões</label>
+                <select id="recModoEscaloes" onchange="atualizarPrevisaoRec()">
+                  <option value="juntos">Juntos na mesma linha</option>
+                  <option value="separados">Linhas individuais por escalão</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-group field-desporto">
+              <div class="label-row">
+                <label>Escalões a incluir na recorrência</label>
+                <div>
+                  <button type="button" class="btn-mini" onclick="toggleChips('recEscaloesChips', true)">Todos</button>
+                  <button type="button" class="btn-mini" onclick="toggleChips('recEscaloesChips', false)">Limpar</button>
+                </div>
+              </div>
+              <div id="recEscaloesChips" class="chips-box"></div>
+            </div>
+
+            <div class="form-group">
+              <label>Dias da Semana *</label>
+              <div class="dias-grid">
+                <button type="button" class="dia-pill active" data-dia="1" onclick="toggleDiaRec(this)">Seg</button>
+                <button type="button" class="dia-pill" data-dia="2" onclick="toggleDiaRec(this)">Ter</button>
+                <button type="button" class="dia-pill active" data-dia="3" onclick="toggleDiaRec(this)">Qua</button>
+                <button type="button" class="dia-pill" data-dia="4" onclick="toggleDiaRec(this)">Qui</button>
+                <button type="button" class="dia-pill active" data-dia="5" onclick="toggleDiaRec(this)">Sex</button>
+                <button type="button" class="dia-pill" data-dia="6" onclick="toggleDiaRec(this)">Sáb</button>
+                <button type="button" class="dia-pill" data-dia="0" onclick="toggleDiaRec(this)">Dom</button>
+              </div>
+            </div>
+
+            <div id="recResumo" class="info-banner">Serão criados 0 registos.</div>
+          </div>
         </div>
 
         <div id="evMetaInfo" class="meta-info"></div>
@@ -190,105 +286,15 @@
         <div class="modal-footer">
           <button type="button" id="btnApagarEvento" class="btn btn-danger hidden" onclick="confirmarApagarEvento()">🗑️ Apagar</button>
           <div class="footer-right">
-            <button type="button" class="btn btn-secondary" onclick="fecharModal('modalEvento')">Cancelar</button>
-            <button type="submit" id="btnGuardarEvento" class="btn btn-primary">Guardar Alterações</button>
+            <button type="button" class="btn btn-outline" onclick="fecharModal('modalEvento')">Cancelar</button>
+            <button type="submit" id="btnGuardarEvento" class="btn btn-green">Guardar Evento</button>
           </div>
         </div>
       </form>
     </div>
   </div>
 
-  <!-- MODAL 2: GERADOR DE TREINOS RECORRENTES -->
-  <div id="modalRecorrencia" class="modal-overlay hidden">
-    <div class="modal-card">
-      <div class="modal-header">
-        <h2>🔄 Gerar Treinos Recorrentes</h2>
-        <button class="close-btn" onclick="fecharModal('modalRecorrencia')">&times;</button>
-      </div>
-      <form id="formRecorrencia" class="modal-body">
-        <div class="form-group">
-          <div class="label-row">
-            <label>Escalões a incluir *</label>
-            <div>
-              <button type="button" class="btn-mini" onclick="toggleChips('recEscaloesBox', true)">Todos</button>
-              <button type="button" class="btn-mini" onclick="toggleChips('recEscaloesBox', false)">Limpar</button>
-            </div>
-          </div>
-          <div id="recEscaloesBox" class="chips-box"></div>
-        </div>
-
-        <div class="grid-2">
-          <div class="form-group">
-            <label for="recModo">Registo de múltiplos escalões</label>
-            <select id="recModo" onchange="atualizarPrevisaoRecorrencia()">
-              <option value="juntos">Juntos na mesma linha</option>
-              <option value="separados">Linhas individuais por escalão</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label for="recTipo">Tipo de Evento</label>
-            <input type="text" id="recTipo" value="Treino">
-          </div>
-        </div>
-
-        <div class="grid-3">
-          <div class="form-group">
-            <label for="recLocal">Local</label>
-            <input list="dlLocais" id="recLocal" placeholder="Pavilhão...">
-          </div>
-          <div class="form-group">
-            <label for="recHoraInicio">Hora Início *</label>
-            <input type="time" id="recHoraInicio" value="19:30" required>
-          </div>
-          <div class="form-group">
-            <label for="recHoraFim">Hora Fim</label>
-            <input type="time" id="recHoraFim" value="21:00">
-          </div>
-        </div>
-
-        <div class="form-group">
-          <label>Dias da Semana *</label>
-          <div class="dias-grid">
-            <button type="button" class="dia-pill active" data-dia="1" onclick="toggleDiaRec(this)">Seg</button>
-            <button type="button" class="dia-pill" data-dia="2" onclick="toggleDiaRec(this)">Ter</button>
-            <button type="button" class="dia-pill active" data-dia="3" onclick="toggleDiaRec(this)">Qua</button>
-            <button type="button" class="dia-pill" data-dia="4" onclick="toggleDiaRec(this)">Qui</button>
-            <button type="button" class="dia-pill active" data-dia="5" onclick="toggleDiaRec(this)">Sex</button>
-            <button type="button" class="dia-pill" data-dia="6" onclick="toggleDiaRec(this)">Sáb</button>
-            <button type="button" class="dia-pill" data-dia="0" onclick="toggleDiaRec(this)">Dom</button>
-          </div>
-        </div>
-
-        <div class="grid-2">
-          <div class="form-group">
-            <label for="recDataInicio">Data Início *</label>
-            <input type="date" id="recDataInicio" required onchange="atualizarPrevisaoRecorrencia()">
-          </div>
-          <div class="form-group">
-            <label for="recDataFim">Data Fim *</label>
-            <input type="date" id="recDataFim" required onchange="atualizarPrevisaoRecorrencia()">
-          </div>
-        </div>
-
-        <div class="form-group">
-          <label for="recObs">Observação Padrão</label>
-          <input type="text" id="recObs" placeholder="Opcional">
-        </div>
-
-        <div id="recResumo" class="info-banner">Serão criadas 0 sessões.</div>
-
-        <div class="modal-footer">
-          <div></div>
-          <div class="footer-right">
-            <button type="button" class="btn btn-secondary" onclick="fecharModal('modalRecorrencia')">Cancelar</button>
-            <button type="submit" id="btnGerarRec" class="btn btn-primary">Gerar em Lote</button>
-          </div>
-        </div>
-      </form>
-    </div>
-  </div>
-
-  <!-- MODAL 3: EXPORTAR AGENDA (FIM DE SEMANA & 4 SEMANAS) -->
+  <!-- MODAL EXPORTAR AGENDA -->
   <div id="modalExportar" class="modal-overlay hidden">
     <div class="modal-card">
       <div class="modal-header">
@@ -358,12 +364,51 @@
         </div>
 
         <div class="action-bar">
-          <button type="button" id="btnExecutarExport" class="btn btn-primary" onclick="executarExportacao()">⚡ Gerar Conteúdo</button>
-          <button type="button" id="btnCopiarExport" class="btn btn-success hidden" onclick="copiarExportacao()">📋 Copiar Texto</button>
+          <button type="button" id="btnExecutarExport" class="btn btn-green" onclick="executarExportacao()">⚡ Gerar Conteúdo</button>
+          <button type="button" id="btnCopiarExport" class="btn btn-outline hidden" onclick="copiarExportacao()">📋 Copiar Texto</button>
         </div>
 
         <div class="form-group" style="margin-top: 10px;">
           <textarea id="expResultado" rows="7" placeholder="O resultado gerado aparecerá aqui..."></textarea>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL DEFINIÇÕES (EXCLUSIVO PARA PREDEFINIÇÃO DE CORES) -->
+  <div id="modalDefinicoes" class="modal-overlay hidden">
+    <div class="modal-card modal-lg">
+      <div class="modal-header">
+        <h2>🎨 Predefinição de Cores</h2>
+        <button class="close-btn" onclick="fecharModal('modalDefinicoes')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p class="helper-text">Define as cores automáticas dos cartões e das etiquetas (tags) por Escalão e Tipo de Evento. Se um evento tiver cor manual escolhida no formulário, essa cor terá prioridade.</p>
+
+        <div class="section-label">Cores por Escalão / Categoria</div>
+        <div class="color-table-header">
+          <span>Escalão / Categoria</span>
+          <span>Cor do Cartão</span>
+          <span>Cor da Tag</span>
+          <span></span>
+        </div>
+        <div id="listaCoresEscaloes" class="color-rules-list"></div>
+
+        <div class="section-label" style="margin-top:16px;">Cores por Tipo de Evento (Fallback se o Escalão não tiver cor)</div>
+        <div class="color-table-header">
+          <span>Tipo de Evento</span>
+          <span>Cor do Cartão</span>
+          <span></span>
+          <span></span>
+        </div>
+        <div id="listaCoresTipos" class="color-rules-list"></div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" onclick="reporCoresPadrao()">Repor Padrão</button>
+          <div class="footer-right">
+            <button type="button" class="btn btn-outline" onclick="fecharModal('modalDefinicoes')">Cancelar</button>
+            <button type="button" id="btnGuardarCores" class="btn btn-green" onclick="guardarDefinicoesCores()">Guardar Predefinições</button>
+          </div>
         </div>
       </div>
     </div>
