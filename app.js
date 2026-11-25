@@ -5,7 +5,6 @@ let allEvents = [];
 let dbLists = {};
 let colorRules = { escaloes: {}, tipos: {} };
 let calendar = null;
-let currentExportMode = 'FDS';
 
 let selectedEscaloes = [];
 let selectedTipos = [];
@@ -670,7 +669,7 @@ async function confirmarApagarEvento() {
   }
 }
 
-// ================= MODAL EXPORTAÇÃO =================
+// ================= MODAL UNIFICADO: MENSAGEM AGENDA =================
 function abrirModalExportar() {
   const hoje = new Date();
   const diasAteSab = (6 - hoje.getDay() + 7) % 7;
@@ -686,36 +685,18 @@ function abrirModalExportar() {
   document.getElementById('modalExportar').classList.remove('hidden');
 }
 
-function mudarTabExport(mode, btnEl) {
-  currentExportMode = mode;
-  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-  btnEl.classList.add('active');
-
-  const formatoSel = document.getElementById('expFormato');
-  const mandoGrp = document.getElementById('expMandoGroup');
-  document.getElementById('btnCopiarExport').classList.add('hidden');
-  document.getElementById('expResultado').value = '';
-
-  if (mode === 'FDS') {
-    mandoGrp.style.display = 'none';
-    document.getElementById('expTitulo').value = '📢 AGENDA DO FIM DE SEMANA ⚽';
-    formatoSel.innerHTML = `
-      <option value="WHATSAPP">💬 Mensagem WhatsApp</option>
-      <option value="1080x1350">🎨 Prompt Gráfico (1080x1350)</option>
-      <option value="A4">📄 Prompt Gráfico (A4)</option>
-    `;
-  } else {
-    mandoGrp.style.display = 'block';
-    document.getElementById('expTitulo').value = 'Agenda de Jogos e Treinos';
-    formatoSel.innerHTML = `
-      <option value="WHATSAPP">💬 Mensagem WhatsApp (4 Semanas)</option>
-      <option value="PDF">📄 Descarregar PDF A4</option>
-    `;
-    const hoje = new Date();
-    const fim = new Date();
-    fim.setDate(hoje.getDate() + 27);
-    document.getElementById('expDataInicio').value = formatarDataLocal(hoje);
-    document.getElementById('expDataFim').value = formatarDataLocal(fim);
+async function obterLogoBase64() {
+  try {
+    const res = await fetch('logo.png');
+    const blob = await res.blob();
+    return await new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result);
+      reader.onerror = () => resolve('');
+      reader.readAsDataURL(blob);
+    });
+  } catch (e) {
+    return '';
   }
 }
 
@@ -723,45 +704,36 @@ async function executarExportacao() {
   const btn = document.getElementById('btnExecutarExport');
   btn.disabled = true;
   btn.textContent = 'A gerar...';
+  document.getElementById('btnCopiarExport').classList.add('hidden');
+
+  const formato = document.getElementById('expFormato').value;
+  const logoBase64 = formato === 'PDF' ? await obterLogoBase64() : '';
 
   const config = {
     titulo: document.getElementById('expTitulo').value,
     dataInicio: document.getElementById('expDataInicio').value,
     dataFim: document.getElementById('expDataFim').value,
+    filtroVisitado: document.getElementById('expMando').value,
+    tipoExportacao: formato,
     escaloes: Array.from(document.querySelectorAll('#expEscaloesBox input:checked')).map(c => c.value),
-    tipos: Array.from(document.querySelectorAll('#expTiposBox input:checked')).map(c => c.value)
+    tipos: Array.from(document.querySelectorAll('#expTiposBox input:checked')).map(c => c.value),
+    logoBase64: logoBase64
   };
 
-  if (currentExportMode === 'FDS') {
-    config.tipoSaida = document.getElementById('expFormato').value;
-    const resp = await apiRequest({ action: 'exportWeekend', config });
-    btn.disabled = false;
-    btn.textContent = '⚡ Gerar Conteúdo';
+  const resp = await apiRequest({ action: 'exportAgenda', config });
+  btn.disabled = false;
+  btn.textContent = '⚡ Gerar Conteúdo';
 
-    if (resp.status === 'success') {
-      document.getElementById('expResultado').value = resp.texto;
+  if (resp.status === 'success') {
+    if (resp.result.tipo === 'TEXTO') {
+      document.getElementById('expResultado').value = resp.result.conteudo;
       document.getElementById('btnCopiarExport').classList.remove('hidden');
-    } else {
-      alert(resp.message);
+    } else if (resp.result.tipo === 'PDF') {
+      descarregarPdfBase64(resp.result.base64, resp.result.nomeFicheiro);
+      document.getElementById('expResultado').value = `✔ PDF "${resp.result.nomeFicheiro}" descarregado com sucesso!`;
     }
   } else {
-    config.tipoExportacao = document.getElementById('expFormato').value;
-    config.filtroVisitado = document.getElementById('expMando').value;
-    const resp = await apiRequest({ action: 'export4Weeks', config });
-    btn.disabled = false;
-    btn.textContent = '⚡ Gerar Conteúdo';
-
-    if (resp.status === 'success') {
-      if (resp.result.tipo === 'WHATSAPP') {
-        document.getElementById('expResultado').value = resp.result.conteudo;
-        document.getElementById('btnCopiarExport').classList.remove('hidden');
-      } else if (resp.result.tipo === 'PDF') {
-        descarregarPdfBase64(resp.result.base64, resp.result.nomeFicheiro);
-        document.getElementById('expResultado').value = `✔ PDF "${resp.result.nomeFicheiro}" descarregado com sucesso!`;
-      }
-    } else {
-      alert(resp.result?.mensagem || resp.message);
-    }
+    alert(resp.result?.mensagem || resp.message);
   }
 }
 

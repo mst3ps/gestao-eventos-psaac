@@ -45,19 +45,17 @@
     
     <!-- CABEÇALHO -->
     <header class="topbar">
-      <!-- Esquerda: Logo + Título + Botões -->
       <div class="header-left">
         <img src="logo.png" alt="PSAAC" class="header-logo">
         <div class="header-title-stack">
           <h1 class="header-title">Gestão de Eventos - PSAAC</h1>
           <div class="header-actions">
             <button class="btn btn-green" onclick="abrirModalNovoEvento()">+ Novo Evento</button>
-            <button class="btn btn-outline" onclick="abrirModalExportar()">📢 Exportar Agenda</button>
+            <button class="btn btn-outline" onclick="abrirModalExportar()">📢 Mensagem Agenda</button>
           </div>
         </div>
       </div>
 
-      <!-- Centro: Multi-Filtros Empilhados (Escalões e Tipos) -->
       <div class="header-center">
         <div class="multi-dropdown" id="ddEscaloes">
           <button type="button" class="multi-btn" onclick="toggleDropdown('ddEscaloes')">
@@ -76,7 +74,6 @@
         </div>
       </div>
 
-      <!-- Direita: Sync + Email + Sair / Definições -->
       <div class="header-right">
         <div class="user-row">
           <button class="btn-sync" title="Sincronizar com Google Sheets" onclick="carregarDados()">↻</button>
@@ -105,7 +102,6 @@
       <form id="formEvento" class="modal-body">
         <input type="hidden" id="evId">
 
-        <!-- SELETOR DE FOLHA / DESTINO -->
         <div class="source-selector" id="sourceSelectorBox">
           <button type="button" class="source-tab active" data-src="DESPORTO" onclick="mudarDestinoEvento('DESPORTO')">⚽ Treinos e Jogos</button>
           <button type="button" class="source-tab" data-src="DIRECAO" onclick="mudarDestinoEvento('DIRECAO')">🏛️ Direção</button>
@@ -120,7 +116,6 @@
             <select id="evTipo" required></select>
           </div>
 
-          <!-- Escalão (Editável em Desporto, automático em Direção/Outros) -->
           <div class="form-group">
             <label for="evEscalao">Escalão *</label>
             <input list="dlEscaloes" id="evEscalao" required placeholder="Selecione ou escreva...">
@@ -294,30 +289,26 @@
     </div>
   </div>
 
-  <!-- MODAL EXPORTAR AGENDA -->
+  <!-- MODAL UNIFICADO: MENSAGEM AGENDA -->
   <div id="modalExportar" class="modal-overlay hidden">
     <div class="modal-card">
       <div class="modal-header">
-        <h2>📢 Exportar Agenda PSAAC</h2>
+        <h2>📢 Mensagem Agenda</h2>
         <button class="close-btn" onclick="fecharModal('modalExportar')">&times;</button>
       </div>
       <div class="modal-body">
-        <div class="tabs">
-          <button type="button" class="tab-btn active" onclick="mudarTabExport('FDS', this)">Agenda Curta / Fim de Semana</button>
-          <button type="button" class="tab-btn" onclick="mudarTabExport('4SEM', this)">Planeamento 4 Semanas (WhatsApp / PDF)</button>
-        </div>
-
         <div class="grid-2">
           <div class="form-group">
-            <label for="expTitulo">Título</label>
+            <label for="expTitulo">Título da Agenda</label>
             <input type="text" id="expTitulo" value="📢 AGENDA DO FIM DE SEMANA ⚽">
           </div>
           <div class="form-group">
             <label for="expFormato">Formato de Saída</label>
             <select id="expFormato">
               <option value="WHATSAPP">💬 Mensagem WhatsApp</option>
+              <option value="PDF">📄 Descarregar PDF A4</option>
               <option value="1080x1350">🎨 Prompt Gráfico (1080x1350)</option>
-              <option value="A4">📄 Prompt Gráfico (A4)</option>
+              <option value="A4">🖼️ Prompt Gráfico (A4)</option>
             </select>
           </div>
         </div>
@@ -331,7 +322,7 @@
             <label for="expDataFim">Data Fim</label>
             <input type="date" id="expDataFim">
           </div>
-          <div class="form-group" id="expMandoGroup" style="display:none;">
+          <div class="form-group">
             <label for="expMando">Mando de Jogo</label>
             <select id="expMando">
               <option value="TODOS">Todos os Jogos</option>
@@ -369,7 +360,7 @@
         </div>
 
         <div class="form-group" style="margin-top: 10px;">
-          <textarea id="expResultado" rows="7" placeholder="O resultado gerado aparecerá aqui..."></textarea>
+          <textarea id="expResultado" rows="9" placeholder="O resultado gerado aparecerá aqui..."></textarea>
         </div>
       </div>
     </div>
